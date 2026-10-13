@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { createEmptyCalibreBook, runCalibredb } from "../lib/calibredb";
 import { createDatabase } from "../lib/db/factory";
+import { findCalibreBookByMetadata, getAllBookAuthors, resetCalibreDB } from "../lib/db/calibre";
 
 async function main() {
   const directory = await mkdtemp(path.join(os.tmpdir(), "tome-release-calibre-"));
@@ -32,12 +33,8 @@ async function main() {
       .get(id) as { title: string; path: string } | undefined;
     assert.equal(book?.title, 'Physical Book "Smoke Test"');
     assert.ok(book);
-    const authors = connection.sqlite.prepare(`
-      SELECT a.name FROM authors a
-      JOIN books_authors_link bal ON bal.author = a.id
-      WHERE bal.book = ? ORDER BY bal.id
-    `).all(id) as Array<{ name: string }>;
-    assert.deepEqual(authors.map(author => author.name), ["Doe, Jane", "Other Author"]);
+    assert.deepEqual(getAllBookAuthors([id]).get(id), ["Doe, Jane", "Other Author"]);
+    assert.equal(findCalibreBookByMetadata('Physical Book "Smoke Test"', ["Doe, Jane", "Other Author"]), id);
     const isbn = connection.sqlite.prepare("SELECT val FROM identifiers WHERE book = ? AND type = 'isbn'")
       .get(id) as { val: string } | undefined;
     assert.equal(isbn?.val, "9780140328721");
@@ -52,6 +49,7 @@ async function main() {
     await access(path.join(library, book.path, "metadata.opf"));
     console.log("Calibre creation smoke test passed: metadata, authors, tags, ISBN, folder and OPF verified; no ebook formats.");
   } finally {
+    resetCalibreDB();
     connection?.sqlite.close();
     await rm(directory, { recursive: true });
   }

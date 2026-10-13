@@ -32,7 +32,8 @@ Tome implements multiple safety mechanisms when writing to the Calibre database:
   `ALLOW_CALIBRE_BOOK_CREATION=true` is required. Other library managers
   must be paused; direct SQL book creation is not permitted.
   Sync reads author names as structured lists so commas inside an author's
-  name are preserved across subsequent syncs.
+  name are preserved across subsequent syncs, decoding Calibre's `|`
+  representation of commas. Duplicate checks use the same decoded names.
 
 **Safety Mechanisms:**
 1. **Retry Logic** (`lib/calibre-watcher.ts`) - Automatically retries sync on database lock errors

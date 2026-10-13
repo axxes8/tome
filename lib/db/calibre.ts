@@ -91,7 +91,7 @@ export function getAllBookAuthors(bookIds: number[]): Map<number, string[]> {
     `).all(...chunk) as Array<{ book: number; name: string }>;
     for (const row of rows) {
       const authors = result.get(row.book) ?? [];
-      authors.push(row.name);
+      authors.push(row.name.replace(/\|/g, ","));
       result.set(row.book, authors);
     }
   }
@@ -109,7 +109,7 @@ export function findCalibreBookByMetadata(title: string, authors: string[]): num
   const candidates = new Map<number, string[]>();
   for (const row of rows) {
     const names = candidates.get(row.id) ?? [];
-    if (row.author) names.push(row.author);
+    if (row.author) names.push(row.author.replace(/\|/g, ","));
     candidates.set(row.id, names);
   }
   const normalize = (names: string[]) => [...new Set(names.map(name => name.trim().toLowerCase()))].sort();

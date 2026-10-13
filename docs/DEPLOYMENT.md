@@ -92,7 +92,7 @@ For ZimaOS, build an image from **this fork**, rather than using the upstream
 `ghcr.io/masonfox/tome:latest` image. The Dockerfile uses Debian and includes
 Calibre's command-line tools, so it is larger than the upstream Alpine image.
 
-Published fork releases are available as `ghcr.io/axxes8/tome:0.6.10`
+Published fork releases are available as `ghcr.io/axxes8/tome:0.6.11`
 (or `ghcr.io/axxes8/tome:latest` after a successful release).
 Set this image in your ZimaOS app configuration, preserving your existing
 volume mounts and adding the environment variables below. Release builds
