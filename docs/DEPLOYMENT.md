@@ -92,6 +92,13 @@ For ZimaOS, build an image from **this fork**, rather than using the upstream
 `ghcr.io/masonfox/tome:latest` image. The Dockerfile uses Debian and includes
 Calibre's command-line tools, so it is larger than the upstream Alpine image.
 
+Published fork releases are available as `ghcr.io/axxes8/tome:0.6.10`
+(or `ghcr.io/axxes8/tome:latest` after a successful release).
+Set this image in your ZimaOS app configuration, preserving your existing
+volume mounts and adding the environment variables below. Release builds
+run the test suite and a disposable-library Calibre creation smoke test
+before publishing images for both amd64 and arm64.
+
 1. Back up the **entire Calibre library**, including `metadata.db` and book folders.
 2. Mount the same entire library folder used by Calibre-Web at `/calibre`,
    read-write. Mounting only `metadata.db` is insufficient.
