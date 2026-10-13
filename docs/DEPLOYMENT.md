@@ -76,10 +76,52 @@ services:
 | `NODE_ENV` | `production` | Runtime environment |
 | `AUTH_PASSWORD` | (none) | Enables authentication when set. Example: `helloworld` |
 | `CALIBRE_DB_PATH` | (none) | Path to Calibre metadata.db inside container. Recommended: `/calibre/metadata.db` |
+| `ALLOW_CALIBRE_BOOK_CREATION` | `false` | Fork extension: set exactly `true` to enable metadata-only Add Book. Requires this fork's image with Calibre tools. |
 | `PORT` | `3000` | Application port |
 | `DATABASE_PATH` | `/app/data/tome.db` | Path to Tome's SQLite database |
 | `PUID` | `1001` | User ID to run as (for fixing volume permissions) |
 | `PGID` | `1001` | Group ID to run as (for fixing volume permissions) |
+
+## Adding Physical Books or Wishlist Entries (This Fork)
+
+This fork can create empty Calibre books without uploading an ebook. It uses
+`calibredb add --empty`, not direct SQL inserts, then syncs the book into Tome.
+Existing books are not edited by this feature.
+
+For ZimaOS, build an image from **this fork**, rather than using the upstream
+`ghcr.io/masonfox/tome:latest` image. The Dockerfile uses Debian and includes
+Calibre's command-line tools, so it is larger than the upstream Alpine image.
+
+1. Back up the **entire Calibre library**, including `metadata.db` and book folders.
+2. Mount the same entire library folder used by Calibre-Web at `/calibre`,
+   read-write. Mounting only `metadata.db` is insufficient.
+3. Set `CALIBRE_DB_PATH=/calibre/metadata.db` and
+   `ALLOW_CALIBRE_BOOK_CREATION=true`. Set `PUID` and `PGID` to a user/group
+   with write permissions on the shared library. Tome does not change the
+   ownership of your Calibre mount.
+4. Replace the example host library path in this repository's Compose file,
+   then run `docker compose up -d --build` on your Docker host. If using the
+   ZimaOS app UI, replace the image with your custom-built image and preserve
+   your existing Tome data and Calibre mounts.
+5. Pause/stop Calibre-Web and close other Calibre library managers before
+   adding books. The confirmation checkbox is an acknowledgement, **not**
+   automatic coordination with Calibre-Web.
+6. Open **Library -> Add Book**. Enter a title and authors (one per line),
+   plus optional ISBN and tags. Submit and wait for Tome to open the new book.
+7. Resume Calibre-Web afterward; refresh/restart it if it has cached the old
+   library contents.
+
+Creation is disabled unless explicitly enabled. Existing ratings, tags and
+sync behavior remain available when disabled. Keep a single Tome instance.
+Tome's internal guard does not prevent another application from writing to
+the library. Do not expose a write-enabled instance publicly without access
+controls.
+
+If creation succeeds in Calibre but Tome sync fails, the form reports that
+the book may already exist and disables resubmission. Use **Sync Calibre**
+after checking the library; do not add it again. Timeouts and unexpected
+command output likewise require checking the library first. Exact title and
+author-set duplicates are rejected, but this is not a fuzzy duplicate finder.
 
 ## PUID/PGID Support
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { RefreshCw, Library as LibraryIcon } from "lucide-react";
+import { RefreshCw, Plus, Library as LibraryIcon } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/Utilities/Button";
 
@@ -9,11 +9,12 @@ interface LibraryHeaderProps {
   syncing: boolean;
   onSync: () => void;
   loading?: boolean;
+  onAddBook?: () => void;
 }
 
-export function LibraryHeader({ totalBooks, syncing, onSync, loading = false }: LibraryHeaderProps) {
+export function LibraryHeader({ totalBooks, syncing, onSync, loading = false, onAddBook }: LibraryHeaderProps) {
   return (
-    <div className="flex items-start justify-between border-b border-[var(--border-color)] pb-6">
+    <div className={cn("flex items-start justify-between border-b border-[var(--border-color)] pb-6", onAddBook && "flex-col gap-4 sm:flex-row")}>
       <div>
         <h1 className="text-5xl font-serif font-bold text-[var(--heading-text)] flex items-center gap-3">
           <LibraryIcon className="w-8 h-8" />
@@ -30,19 +31,25 @@ export function LibraryHeader({ totalBooks, syncing, onSync, loading = false }: 
         )}
       </div>
 
-      <Button
-        onClick={onSync}
-        disabled={syncing}
-        variant="primary"
-        size="xl"
-        icon={<RefreshCw className={cn("w-4 h-4", syncing && "animate-spin")} />}
-        className="mt-3 sm:mt-2"
-        title={syncing ? "Syncing..." : "Sync Calibre"}
-      >
-        <span className="hidden sm:inline">
-          {syncing ? "Syncing..." : "Sync Calibre"}
-        </span>
-      </Button>
+      <div className="flex flex-wrap justify-end gap-2 mt-3 sm:mt-2">
+        {onAddBook && (
+          <Button onClick={onAddBook} disabled={syncing} variant="secondary" size="xl" icon={<Plus className="w-4 h-4" />} title="Add Book">
+            Add Book
+          </Button>
+        )}
+        <Button
+          onClick={onSync}
+          disabled={syncing}
+          variant="primary"
+          size="xl"
+          icon={<RefreshCw className={cn("w-4 h-4", syncing && "animate-spin")} />}
+          title={syncing ? "Syncing..." : "Sync Calibre"}
+        >
+          <span className="hidden sm:inline">
+            {syncing ? "Syncing..." : "Sync Calibre"}
+          </span>
+        </Button>
+      </div>
     </div>
   );
 }

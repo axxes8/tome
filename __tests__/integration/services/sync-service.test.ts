@@ -138,6 +138,18 @@ describe("syncCalibreLibrary", () => {
     expect(session?.status).toBe("reading");
   });
 
+  test("preserves commas in author names from structured Calibre authors on repeated sync", async () => {
+    const source: CalibreDataSource = {
+      getAllBooks: () => [{ ...mockCalibreBook, authors: "Doe, Jane,Other Author" }],
+      getBookTags: () => [],
+      getAllBookAuthors: () => new Map([[mockCalibreBook.id, ["Doe, Jane", "Other Author"]]]),
+    };
+    expect((await syncCalibreLibrary(source)).success).toBe(true);
+    expect((await bookRepository.findByCalibreId(mockCalibreBook.id))?.authors).toEqual(["Doe, Jane", "Other Author"]);
+    expect((await syncCalibreLibrary(source)).success).toBe(true);
+    expect((await bookRepository.findByCalibreId(mockCalibreBook.id))?.authors).toEqual(["Doe, Jane", "Other Author"]);
+  });
+
   test("detects and marks orphaned books", async () => {
     // Arrange - Create multiple books in DB (need 11+ for 10% threshold)
     const book1 = await bookRepository.create(createTestBook({

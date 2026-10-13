@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useLibraryData } from "@/hooks/useLibraryData";
 import { libraryService } from "@/lib/library-service";
 import { LibraryHeader } from "@/components/Library/LibraryHeader";
+import { AddBookModal } from "@/components/Library/AddBookModal";
 import { LibraryFilters } from "@/components/Library/LibraryFilters";
 import { BookGrid } from "@/components/Books/BookGrid";
 import { ScrollToTopButton } from "@/components/Layout/ScrollToTopButton";
@@ -17,6 +18,8 @@ function LibraryPageContent() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [canAddBooks, setCanAddBooks] = useState(false);
+  const [showAddBook, setShowAddBook] = useState(false);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [loadingTags, setLoadingTags] = useState(true);
   const [availableShelves, setAvailableShelves] = useState<Array<{ id: number; name: string; color: string | null }>>([]);
@@ -26,6 +29,22 @@ function LibraryPageContent() {
   const [restoringScrollState, setRestoringScrollState] = useState(false);
   const [targetBooksCount, setTargetBooksCount] = useState<number | null>(null);
   const [targetScrollPosition, setTargetScrollPosition] = useState<number | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    async function checkBookCreation() {
+      try {
+        const response = await fetch("/api/books/create", { signal: controller.signal });
+        if (!response.ok) throw new Error("Could not check book creation settings");
+        const data = await response.json();
+        setCanAddBooks(data.enabled === true);
+      } catch (error) {
+        if (!controller.signal.aborted) toast.error("Could not check whether adding books is enabled.");
+      }
+    }
+    checkBookCreation();
+    return () => controller.abort();
+  }, []);
 
   // Disable browser's automatic scroll restoration
   useEffect(() => {
@@ -507,7 +526,19 @@ function LibraryPageContent() {
         syncing={syncing}
         onSync={handleSync}
         loading={isInitialLoading}
+        onAddBook={canAddBooks ? () => setShowAddBook(true) : undefined}
       />
+      {showAddBook && (
+        <AddBookModal
+          isOpen={showAddBook}
+          onClose={() => setShowAddBook(false)}
+          onCreated={bookId => {
+            libraryService.clearCache();
+            toast.success("Book added to Calibre and Tome.");
+            router.push(`/books/${bookId}`);
+          }}
+        />
+      )}
 
       <LibraryFilters
         search={searchInput}

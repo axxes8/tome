@@ -1,4 +1,4 @@
-import { getAllBooks, getBookTags, getAllBookTags, getBooksCount, CalibreBook, PaginationOptions } from "@/lib/db/calibre";
+import { getAllBooks, getBookTags, getAllBookTags, getAllBookAuthors, getBooksCount, CalibreBook, PaginationOptions } from "@/lib/db/calibre";
 import { bookRepository, sessionRepository } from "@/lib/repositories";
 import type { NewBook } from "@/lib/db/schema/books";
 import type { NewReadingSession } from "@/lib/db/schema/reading-sessions";
@@ -42,6 +42,7 @@ export interface CalibreDataSource {
   getBooksCount?(): number;
   getBookTags(bookId: number): string[];
   getAllBookTags?(bookIds?: number[]): Map<number, string[]>;
+  getAllBookAuthors?(bookIds: number[]): Map<number, string[]>;
 }
 
 /**
@@ -52,6 +53,7 @@ const defaultCalibreSource: CalibreDataSource = {
   getBooksCount,
   getBookTags,
   getAllBookTags,
+  getAllBookAuthors,
 };
 
 let lastSyncTime: Date | null = null;
@@ -206,6 +208,7 @@ export async function syncCalibreLibrary(
       // Step 4: Build arrays of books to insert/update
       const booksToInsert: NewBook[] = [];
       const booksToUpdate: NewBook[] = [];
+      const allAuthorsMap = calibreSource.getAllBookAuthors?.(chunkCalibreIds);
       let chunkSyncedCount = 0;
       let chunkUpdatedCount = 0;
 
@@ -214,7 +217,9 @@ export async function syncCalibreLibrary(
         const existingBook = existingBooksMap.get(calibreBook.id);
 
         // Parse authors from Calibre
-        const authors = calibreBook.authors
+        const authors = allAuthorsMap
+          ? allAuthorsMap.get(calibreBook.id) ?? []
+          : calibreBook.authors
           ? calibreBook.authors
               .split(/\s*[,|]\s*/)
               .map((a) => a.trim())

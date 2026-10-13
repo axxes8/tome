@@ -101,6 +101,12 @@ Visit [http://localhost:3000](http://localhost:3000) and sync your Calibre libra
 
 Tome reads from and writes to Calibre's `metadata.db`. **Concurrent writes** (for example, editing tags or ratings in Tome while Calibre is running) can lead to database locks or unpredictable results. **Read-only access is safe!**
 
+**Fork extension:** Optional **Library -> Add Book** creates metadata-only
+Calibre entries for physical books and wishlists using Calibre's own tools.
+Build this fork's Docker image and set `ALLOW_CALIBRE_BOOK_CREATION=true`.
+Back up the library and pause Calibre-Web before additions. See
+[deployment instructions](./docs/DEPLOYMENT.md#adding-physical-books-or-wishlist-entries-this-fork).
+
 ## Roadmap
 Active development can be viewed [here](https://github.com/users/masonfox/projects/2/views/6), representing the upcoming release. Additionally, checkout repo [discussions](https://github.com/masonfox/tome/discussions) for [release](https://github.com/masonfox/tome/discussions?discussions_q=is%3Aopen+label%3ARelease) and [feature](https://github.com/masonfox/tome/discussions?discussions_q=is%3Aopen+label%3Afeature) announcements and more!
 

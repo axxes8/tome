@@ -59,6 +59,12 @@ Calibre is the user's primary book library. Tome tracks reading; Calibre manages
 - Never edit book metadata, authors, series, or tags in Calibre
 - Sync ratings bidirectionally (Calibre expects this)
 
+**User-approved fork exception (2026-10-13):** Opt-in metadata-only book
+creation is permitted through Calibre's own tools. This does not authorize
+editing existing book metadata. Require an existing writable library,
+explicit acknowledgement that other library managers are paused, and
+actionable reporting of partial failures. Creation is disabled by default.
+
 ---
 
 ### III. Preserve Complete History
@@ -159,6 +165,9 @@ Tome is focused. These are out of scope permanently:
 
 5. **Edit Book Metadata**
    Calibre owns title, author, series, tags, and cover images. Tome respects that boundary.
+
+   This fork may create new metadata-only books under the exception in
+   Principle II; editing existing metadata remains out of scope.
 
 ---
 

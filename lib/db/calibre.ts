@@ -78,6 +78,48 @@ export interface PaginationOptions {
   offset?: number;
 }
 
+export function getAllBookAuthors(bookIds: number[]): Map<number, string[]> {
+  const result = new Map<number, string[]>();
+  for (let offset = 0; offset < bookIds.length; offset += 500) {
+    const chunk = bookIds.slice(offset, offset + 500);
+    const rows = getCalibreDB().prepare(`
+      SELECT bal.book, a.name
+      FROM books_authors_link bal
+      JOIN authors a ON a.id = bal.author
+      WHERE bal.book IN (${chunk.map(() => "?").join(",")})
+      ORDER BY bal.id
+    `).all(...chunk) as Array<{ book: number; name: string }>;
+    for (const row of rows) {
+      const authors = result.get(row.book) ?? [];
+      authors.push(row.name);
+      result.set(row.book, authors);
+    }
+  }
+  return result;
+}
+
+export function findCalibreBookByMetadata(title: string, authors: string[]): number | undefined {
+  const rows = getCalibreDB().prepare(`
+    SELECT b.id, a.name AS author
+    FROM books b
+    LEFT JOIN books_authors_link bal ON bal.book = b.id
+    LEFT JOIN authors a ON a.id = bal.author
+    WHERE b.title = ? COLLATE NOCASE
+  `).all(title) as Array<{ id: number; author: string | null }>;
+  const candidates = new Map<number, string[]>();
+  for (const row of rows) {
+    const names = candidates.get(row.id) ?? [];
+    if (row.author) names.push(row.author);
+    candidates.set(row.id, names);
+  }
+  const normalize = (names: string[]) => [...new Set(names.map(name => name.trim().toLowerCase()))].sort();
+  const expected = JSON.stringify(normalize(authors));
+  for (const [id, names] of candidates) {
+    if (JSON.stringify(normalize(names)) === expected) return id;
+  }
+  return undefined;
+}
+
 /**
  * Get total count of books in Calibre library
  */

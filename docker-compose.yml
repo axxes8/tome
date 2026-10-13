@@ -25,6 +25,9 @@ services:
     environment:
       - NODE_ENV=production
       - CALIBRE_DB_PATH=/calibre/metadata.db
+      # Fork-only opt-in: creates metadata-only books using Calibre tools.
+      # Pause Calibre-Web and other library managers before adding books.
+      - ALLOW_CALIBRE_BOOK_CREATION=true
       # PUID/PGID: Customize user/group ID to match your host system
       # This eliminates permission issues with mounted volumes
       # Default: 1001:1001 (if not specified)
@@ -41,7 +44,7 @@ services:
       # This includes /app/data and /app/.next for cache writes
       # No manual chown required!
       - tome-data:/app/data
-      # Mount your Calibre library (read-write for rating sync)
+      # Mount the entire Calibre library read-write, not just metadata.db
       # Replace with your actual Calibre library path
       - ./calibre-library:/calibre
     restart: unless-stopped

@@ -27,6 +27,12 @@ Tome implements multiple safety mechanisms when writing to the Calibre database:
 - `updateCalibreRating(calibreId, stars)` - Updates `ratings` and `books_ratings_link` tables
 - `updateCalibreTags(calibreId, tags)` - Updates `tags` and `books_tags_link` tables
 - `batchUpdateCalibreTags(operations)` - Bulk tag updates for shelving
+- Fork-only opt-in: `BookCreationService` creates metadata-only books using
+  `calibredb add --empty`, then existing sync imports them into Tome.
+  `ALLOW_CALIBRE_BOOK_CREATION=true` is required. Other library managers
+  must be paused; direct SQL book creation is not permitted.
+  Sync reads author names as structured lists so commas inside an author's
+  name are preserved across subsequent syncs.
 
 **Safety Mechanisms:**
 1. **Retry Logic** (`lib/calibre-watcher.ts`) - Automatically retries sync on database lock errors

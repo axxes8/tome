@@ -5,7 +5,7 @@
 # Handles Docker housekeeping that requires root privileges:
 # - User/group creation with custom PUID/PGID
 # - Permission fixes for mounted volumes
-# - Privilege dropping via su-exec
+# - Privilege dropping via gosu
 #
 # Runs silently - all user-facing output is handled by the TypeScript entrypoint.
 # Only critical errors are output to stderr with [shell] prefix.
@@ -17,16 +17,16 @@ PUID=${PUID:-1001}
 PGID=${PGID:-1001}
 
 # Setup user and group with target PUID/PGID if they don't exist
-# Note: Delete user BEFORE group (user might be member of group)
 if ! getent passwd "${PUID}" >/dev/null 2>&1; then
 	# Remove default nextjs user if it exists (do this first)
-	deluser nextjs 2>/dev/null || true
+	if getent passwd nextjs >/dev/null 2>&1; then
+		userdel nextjs
+	fi
 fi
 
 if ! getent group "${PGID}" >/dev/null 2>&1; then
-	# Remove default nodejs group if it exists (after removing user)
-	delgroup nodejs 2>/dev/null || true
-	addgroup -g "${PGID}" -S nodejs || {
+	# Keep the default group: an existing user may still have it as their primary group.
+	groupadd -g "${PGID}" "tome-${PGID}" || {
 		echo "[shell] ERROR: Failed to create group with GID=${PGID}" >&2
 		exit 1
 	}
@@ -34,7 +34,8 @@ fi
 
 # Create user if it doesn't exist (after group is ready)
 if ! getent passwd "${PUID}" >/dev/null 2>&1; then
-	adduser -u "${PUID}" -S nextjs -G nodejs || {
+	GROUP_NAME=$(getent group "${PGID}" | cut -d: -f1)
+	useradd -u "${PUID}" -g "${GROUP_NAME}" -M nextjs || {
 		echo "[shell] ERROR: Failed to create user with UID=${PUID}" >&2
 		exit 1
 	}
@@ -59,5 +60,5 @@ sync
 
 # Drop privileges and execute TypeScript entrypoint via tsx
 # tsx handles path aliases (@/) at runtime (no compilation needed)
-# su-exec replaces the current process (like exec)
-exec su-exec "${PUID}:${PGID}" npx tsx /app/scripts/entrypoint.ts
+# gosu replaces the current process (like exec)
+exec gosu "${PUID}:${PGID}" npx tsx /app/scripts/entrypoint.ts
