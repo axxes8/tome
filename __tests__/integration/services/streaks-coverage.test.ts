@@ -4,6 +4,8 @@ import { bookRepository, sessionRepository, progressRepository, streakRepository
 import { setupTestDatabase, teardownTestDatabase, clearTestDatabase } from "@/__tests__/helpers/db-setup";
 import { toProgressDate, toSessionDate } from "../../test-utils";
 import { toDateString } from "@/utils/dateHelpers.server";
+import { startOfDay } from "date-fns";
+import { toZonedTime, fromZonedTime } from "date-fns-tz";
 
 /**
  * Streak Coverage Tests
@@ -13,11 +15,12 @@ import { toDateString } from "@/utils/dateHelpers.server";
  * - getActivityCalendar functionality
  */
 
+// Match the streak service's day boundaries (default user timezone).
 function getStreakDate(daysOffset: number = 0): Date {
-  const date = new Date();
-  date.setDate(date.getDate() + daysOffset);
-  date.setHours(0, 0, 0, 0);
-  return date;
+  const userTimezone = "America/New_York";
+  const todayInUserTz = startOfDay(toZonedTime(new Date(), userTimezone));
+  todayInUserTz.setDate(todayInUserTz.getDate() + daysOffset);
+  return fromZonedTime(todayInUserTz, userTimezone);
 }
 
 beforeAll(async () => {
