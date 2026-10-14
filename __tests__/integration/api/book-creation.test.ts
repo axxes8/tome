@@ -47,8 +47,44 @@ describe("book creation API", () => {
     vi.spyOn(crossOriginRequest.headers, "get").mockImplementation(name =>
       name.toLowerCase() === "origin" ? "http://example.com" : getHeader(name)
     );
-    expect(crossOriginRequest.nextUrl.origin).toBe("http://localhost:3000");
     expect((await POST(crossOriginRequest)).status).toBe(403);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  function withHeaders(req: NextRequest, overrides: Record<string, string>) {
+    const getHeader = req.headers.get.bind(req.headers);
+    vi.spyOn(req.headers, "get").mockImplementation(name =>
+      overrides[name.toLowerCase()] ?? getHeader(name)
+    );
+    return req;
+  }
+
+  test("allows same-origin writes behind Docker port mapping", async () => {
+    vi.spyOn(bookCreationService, "create").mockResolvedValue({ calibreId: 7, bookId: 3 });
+    const mapped = withHeaders(
+      new NextRequest("http://0.0.0.0:3000/api/books/create", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      }),
+      { origin: "http://192.168.1.76:8085", host: "192.168.1.76:8085", "sec-fetch-site": "same-origin" }
+    );
+    expect((await POST(mapped)).status).toBe(201);
+  });
+
+  test("allows same-origin writes behind a reverse proxy", async () => {
+    vi.spyOn(bookCreationService, "create").mockResolvedValue({ calibreId: 7, bookId: 3 });
+    const proxied = withHeaders(
+      new NextRequest("http://0.0.0.0:3000/api/books/create", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      }),
+      { origin: "https://tome.example.com", host: "tome:3000", "x-forwarded-host": "tome.example.com" }
+    );
+    expect((await POST(proxied)).status).toBe(201);
+  });
+
+  test("rejects requests the browser marks cross-site", async () => {
+    const create = vi.spyOn(bookCreationService, "create");
+    const crossSite = withHeaders(request(body), { "sec-fetch-site": "cross-site" });
+    expect((await POST(crossSite)).status).toBe(403);
     expect(create).not.toHaveBeenCalled();
   });
 
